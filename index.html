@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Резерв220 — підбір системи резервного живлення</title>
+<title>СвітлоДім — підбір системи резервного живлення</title>
 <meta name="description" content="Інвертори, акумулятори LiFePO4 і готові комплекти резервного живлення. Онлайн-підбір системи під ваші прилади та тривалість відключень.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -71,12 +71,24 @@
           <div class="apps" id="apps"></div>
         </div>
         <div class="step">
-          <div class="step-t"><span class="n">4</span>Скільки годин без світла</div>
+          <div class="step-t"><span class="n">4</span>Графік відключень<small>щоб порахувати і роботу, і зарядку</small></div>
+          <div class="seg sched" id="schedSeg">
+            <button data-on="3" data-off="3">💡 3 год є · 3 немає</button>
+            <button data-on="2" data-off="4">💡 2 год є · 4 немає</button>
+            <button data-on="3" data-off="6">💡 3 год є · 6 немає</button>
+          </div>
+          <div class="sub-l">Без світла</div>
           <div class="range-row">
-            <input type="range" class="range" id="hours" min="2" max="24" step="1" value="8">
+            <input type="range" class="range" id="hours" min="1" max="24" step="1" value="8" aria-label="Скільки годин без світла">
             <div class="range-val" id="hoursVal"></div>
           </div>
-          <div class="ticks"><span>2 год</span><span>8</span><span>12</span><span>24 год</span></div>
+          <div class="ticks"><span>1 год</span><span>6</span><span>12</span><span>24 год</span></div>
+          <div class="sub-l">Світло є (час на зарядку)</div>
+          <div class="range-row">
+            <input type="range" class="range" id="onHours" min="1" max="12" step="1" value="4" aria-label="Скільки годин світло є">
+            <div class="range-val" id="onVal"></div>
+          </div>
+          <div class="ticks"><span>1 год</span><span>4</span><span>8</span><span>12 год</span></div>
         </div>
         <div class="step">
           <div class="step-t"><span class="n">5</span>Сонячні панелі</div>

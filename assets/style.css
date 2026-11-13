@@ -126,7 +126,13 @@ section{padding:80px 0}
 .rec.best .tag{background:var(--amber);color:var(--night)}
 .rec h4{margin:0 0 6px;font-size:15px;line-height:1.3}
 .rec .parts{font-size:13px;color:var(--ink-3);margin:-2px 0 8px}
-.meters{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0 10px}
+.meters{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 6px}
+@media (max-width:520px){.meters{grid-template-columns:1fr 1fr}.meters .meter:last-child{grid-column:1/-1}}
+.charge-note{font-size:12.5px;margin:0 0 10px;color:var(--ink-3)}
+.charge-note.ok{color:var(--green)}
+.charge-note.bad{color:var(--red)}
+.sub-l{font-size:13.5px;font-weight:700;color:var(--ink-2);margin:16px 0 4px}
+.sched{margin-bottom:4px}
 .meter span{font-size:12px;color:var(--ink-3);display:flex;justify-content:space-between}
 .meter span b{color:var(--ink);font-weight:700}
 .bar{height:6px;border-radius:6px;background:var(--soft);overflow:hidden;margin-top:4px}
@@ -317,3 +323,5 @@ section{padding:80px 0}
 .steps-list li{counter-increment:s;position:relative;padding-left:44px;margin:14px 0}
 .steps-list li::before{content:counter(s);position:absolute;left:0;top:-2px;width:30px;height:30px;border-radius:50%;background:var(--amber);color:var(--night);font-weight:800;display:grid;place-items:center;font-size:14px}
 .foot-site .logo-mark{background:#1d2c46}
+.meter span{flex-direction:column;align-items:flex-start;gap:1px;line-height:1.25}
+.meter span b{font-size:14.5px}
