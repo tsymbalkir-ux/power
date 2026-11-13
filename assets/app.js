@@ -354,7 +354,7 @@
       '<div class="meter"><span>Від повної батареї <b>≈ ' + (hrs >= 99 ? '99+' : num(hrs, 0)) + ' год</b></span>' + bar(cov, cov < 0.95 ? (cov < 0.7 ? 'low' : 'mid') : '') + '</div>' +
       '<div class="meter"><span>Завантаження інвертора <b>' + Math.round(load * 100) + '%</b></span>' + bar(load, load > 0.85 ? 'mid' : '') + '</div>' +
       '</div>' + chargeBlock(c, need) +
-      '<div class="rec-foot"><span class="price">' + fmt(c.price) + '</span>' +
+      '<div class="rec-foot"><span class="price">' + fmt(c.price) + ' <small class="vat">без ПДВ</small></span>' +
       '<button class="btn btn-ghost btn-sm" data-open="' + c.main.id + '">Деталі</button>' +
       '<button class="btn btn-dark btn-sm" data-order="' + esc(c.key) + '">Замовити</button></div>' +
       '</div></div>';
@@ -458,6 +458,7 @@
           return '<div class="alt-row"><span class="a-n">' + esc(c.kind === 'kit' ? short(c.main) : c.title) + '<small>' + num(c.kw) + ' кВт · ' + num(c.kwh, 2) + ' кВт·год · ≈ ' + num(Math.min(c.hoursRun, 99), 0) + ' год · зарядка до ' + Math.round(c.chargeTo) + '%' + (c.okCharge ? '' : ' ⚠') + (c.solar ? ' · ☀' : '') + '</small></span><b>' + fmt(c.price) + '</b><button data-order="' + esc(c.key) + '">Замовити</button></div>';
         }).join('') + '</div>';
     }
+    html += '<p class="calc-note">ⓘ Розрахунок орієнтовний, але максимально наближений до реальних умов: ми враховуємо захисний залишок заряду, ККД інвертора, пускові струми та реальну швидкість зарядки кожної моделі. На практиці результат може дещо відрізнятися — залежно від того, які прилади й коли працюють, температури та стану батареї. Остаточну конфігурацію підтвердимо під час консультації.</p>';
     $('#result').innerHTML = html;
     $('#mbarT').innerHTML = '<b>від ' + num(Math.ceil(need.needKw * 2) / 2) + ' кВт · ' + num(Math.ceil(need.needKwh * 2) / 2) + ' кВт·год</b><br>' + (r.res.length ? 'Найкраще: ' + fmt(r.res[0].c.price) : 'Дивіться варіанти');
     var t = $('#altT'); if (t) t.addEventListener('click', function () { $('#altL').classList.toggle('open'); });
@@ -530,7 +531,7 @@
       (imgs.length > 1 ? '<div class="thumbs">' + imgs.map(function (s, i) { return '<button data-i="' + i + '" aria-pressed="' + (i === 0) + '">' + ph(p, i) + '</button>'; }).join('') + '</div>' : '') +
       '</div><div class="pd-info"><div class="eyebrow">' + esc(CAT[p.cat].one) + ' · ' + esc(p.brand) + '</div><h2>' + esc(p.name) + '</h2>' +
       '<div class="specs">' + specList(p).map(function (x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
-      '<div class="pd-buy"><div><div class="price">' + fmt(p.price) + '</div>' + (p.avail ? '<div class="avail">● В наявності</div>' : '') + '</div><button class="btn btn-amber" style="margin-left:auto" data-order="' + p.id + '">Замовити</button></div>' +
+      '<div class="pd-buy"><div><div class="price">' + fmt(p.price) + ' <small class="vat">без ПДВ</small></div>' + (p.avail ? '<div class="avail">● В наявності</div>' : '') + '</div><button class="btn btn-amber" style="margin-left:auto" data-order="' + p.id + '">Замовити</button></div>' +
       '<table class="kv">' + rows + '</table>' +
       (comp.length ? '<div class="compat"><h4>' + (p.cat === 'inverter' ? 'Сумісні акумулятори' : 'Сумісні інвертори') + '</h4><div class="row">' + comp.map(function (c) { return '<button data-open="' + c.id + '">' + esc(short(c)) + '</button>'; }).join('') + '</div></div>' : '') +
       '</div>' + (p.desc ? '<div class="desc"><div class="desc-inner">' + p.desc + '</div></div>' : '') + '</div>';
@@ -568,7 +569,7 @@
     $('#oSheet').innerHTML = '<button class="x" aria-label="Закрити" data-close>×</button><form class="form" id="oForm" novalidate>' +
       '<h2>Заявка</h2><div class="muted" style="font-size:14px">Залиште контакт — підготуємо повідомлення, яке залишиться лише надіслати.</div>' +
       (o.items.length ? '<div class="order-items">' + o.items.map(function (x) { return '<div><span>' + (x[1] > 1 ? x[1] + ' × ' : '') + esc(x[0].name) + '</span><b>' + fmt(x[0].price * x[1]) + '</b></div>'; }).join('') +
-        (o.items.length > 1 || o.items[0][1] > 1 ? '<div style="border-top:1px solid var(--line);margin-top:6px;padding-top:8px"><span>Разом</span><b>' + fmt(o.total) + '</b></div>' : '') + '</div>' : '') +
+        (o.items.length > 1 || o.items[0][1] > 1 ? '<div style="border-top:1px solid var(--line);margin-top:6px;padding-top:8px"><span>Разом (без ПДВ)</span><b>' + fmt(o.total) + '</b></div>' : '') + '</div>' : '') +
       '<label for="oName">Ім\'я</label><input id="oName" autocomplete="name" value="' + esc(draft.name || '') + '">' +
       '<label for="oPhone">Телефон *</label><input id="oPhone" type="tel" autocomplete="tel" placeholder="+380" value="' + esc(draft.phone || '') + '">' +
       '<label for="oNote">Коментар</label><textarea id="oNote" rows="3" placeholder="Місто, потрібен монтаж, питання…"></textarea>' +
@@ -580,7 +581,7 @@
       if (phone.replace(/\D/g, '').length < 9) { $('#oPhone').focus(); $('#oPhone').style.borderColor = 'var(--red)'; return; }
       store.set('order-contact', { name: name, phone: phone });
       var text = 'Заявка з сайту ' + (CFG.brand || '') + '\n\n' +
-        (o.items.length ? o.items.map(function (x) { return '• ' + (x[1] > 1 ? x[1] + ' × ' : '') + x[0].name + ' — ' + fmt(x[0].price * x[1]); }).join('\n') + '\nРазом: ' + fmt(o.total) + '\n\n' : '') +
+        (o.items.length ? o.items.map(function (x) { return '• ' + (x[1] > 1 ? x[1] + ' × ' : '') + x[0].name + ' — ' + fmt(x[0].price * x[1]); }).join('\n') + '\nРазом: ' + fmt(o.total) + ' (без ПДВ)' + '\n\n' : '') +
         (o.calc ? calcSummary() + '\n\n' : '') +
         'Ім\'я: ' + (name || '—') + '\nТелефон: ' + phone + (note ? '\nКоментар: ' + note : '');
       var links = [];

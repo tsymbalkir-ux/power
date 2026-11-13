@@ -53,7 +53,7 @@
       '<div><h4>Магазин</h4><a href="' + home + '#pidbir">Онлайн-підбір</a><a href="' + home + '#catalog">Каталог</a><a href="' + home + '#faq">Питання</a></div>' +
       '<div><h4>Покупцям</h4>' + PAGES.map(function (p) { return '<a href="' + p[0] + '">' + p[1] + '</a>'; }).join('') + '</div>' +
       '<div><h4>Контакти</h4>' + contacts.join('') + '</div>' +
-      '</div><div class="wrap foot-bottom"><span>© ' + new Date().getFullYear() + ' ' + esc(CFG.brand) + (L.name ? ' · ' + esc(L.name) : '') + '</span><span>Ціни вказано в гривнях.</span></div>';
+      '</div><div class="wrap foot-bottom"><span>© ' + new Date().getFullYear() + ' ' + esc(CFG.brand) + (L.name ? ' · ' + esc(L.name) : '') + '</span><span>Ціни вказано в гривнях без ПДВ.</span></div>';
   }
 
   // підстановка значень з конфігу: <span data-v="legal.iban"></span>
