@@ -5,6 +5,7 @@ import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPDATED = '13.11.2026'
+VER = '20261113-2'  # змінюйте при кожному оновленні, щоб браузери не брали старі файли з кешу
 
 NAV = [
     ('oplata-dostavka.html', 'Оплата і доставка'),
@@ -193,7 +194,7 @@ TPL = '''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/style.css?v={ver}">
 </head>
 <body data-page="{slug}">
 <header id="siteHeader"></header>
@@ -211,8 +212,8 @@ TPL = '''<!DOCTYPE html>
 </div></section>
 </main>
 <footer id="siteFooter"></footer>
-<script src="assets/config.js"></script>
-<script src="assets/layout.js"></script>
+<script src="assets/config.js?v={ver}"></script>
+<script src="assets/layout.js?v={ver}"></script>
 <script>document.title = document.title + ' — ' + (window.SITE_CONFIG || {{}}).brand;</script>
 </body>
 </html>
@@ -220,7 +221,7 @@ TPL = '''<!DOCTYPE html>
 
 for fn, (title, lead, body) in PAGES.items():
     side = ''.join('<a href="%s"%s>%s</a>' % (f, ' aria-current="page"' if f == fn else '', t) for f, t in NAV)
-    html = TPL.format(title=title, lead=lead, body=body, side=side, slug=fn[:-5], updated=UPDATED)
+    html = TPL.format(ver=VER, title=title, lead=lead, body=body, side=side, slug=fn[:-5], updated=UPDATED)
     with open(os.path.join(ROOT, fn), 'w', encoding='utf-8') as f:
         f.write(html)
     print('ok', fn)
