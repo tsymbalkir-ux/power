@@ -253,6 +253,20 @@
     return Math.min(INV_CHARGE_A[inv.id] || 100, batA) * b.volt / 1000;
   }
 
+  // Готові комплекти, що складаються з тих самих товарів каталогу: пари «інвертор + батарея»,
+  // які їх повторюють, у підборі не показуємо — лишаємо тільки комплект.
+  var KIT_SAME_AS = {
+    'PE-PKG-HOME': 'PE-INV-ANERN-4200+1xPE-TYT-8',
+    'PE-PKG-DEYE6-TYT16': 'PE-INV-DEYE-6K-SG05+1xPE-TYT-16',
+    'PE-PKG-DEYE8-TYT16': 'PE-INV-DEYE-8K+1xPE-TYT-16',
+    'PE-KIT-DEYE6-SEF16': 'PE-INV-DEYE-6K-SG05+1xPE-DEYE-SEF16C',
+    'PE-KIT-DEYE6SG06-SEF5': 'PE-INV-DEYE-6K+1xPE-DEYE-SEF5PRO',
+    'PE-KIT-DEYE66OG-SEF5': 'PE-INV-DEYE-6.6K-OG+1xPE-DEYE-SEF5PRO',
+    'PE-KIT-DEYE6SG06-SEF16': 'PE-INV-DEYE-6K+1xPE-DEYE-SEF16C'
+  };
+  var DUP_BUILDS = {};
+  Object.keys(KIT_SAME_AS).forEach(function (k) { DUP_BUILDS[KIT_SAME_AS[k]] = k; });
+
   // усі можливі конфігурації: готові комплекти + інвертор із батареями
   var INV = P.filter(function (p) { return p.cat === 'inverter'; });
   var BAT = P.filter(function (p) { return p.cat === 'battery' || p.cat === 'hv'; });
@@ -264,6 +278,7 @@
     INV.forEach(function (inv) {
       BAT.filter(function (b) { return b.bus === inv.bus; }).forEach(function (b) {
         var n = b.cat === 'hv' ? 1 : Math.max(1, Math.min(4, Math.ceil(need.needKwh / b.kwh - 0.05)));
+        if (DUP_BUILDS[inv.id + '+' + n + 'x' + b.id]) return; // такий готовий комплект уже є
         out.push({
           key: inv.id + '+' + n + 'x' + b.id, kind: 'build', main: inv,
           title: short(inv) + ' + ' + (n > 1 ? n + ' × ' : '') + short(b),
@@ -345,28 +360,49 @@
       '</div></div>';
   }
 
-  /* Блок зарядки: на скільки зарядиться батарея за 1, 2, 3… год світла (з 20%)
-     і чи вистачить цього заряду на наступний період без світла. */
+  /* Блок зарядки. Порівнюємо в кВт·год, щоб батареї різної ємності було видно однаково:
+     скільки енергії батарея набере, поки світло є (з 20% — захисного мінімуму),
+     і скільки потрібно на наступний період без світла. */
   function chargeBlock(c, need) {
     var perH = c.chargeKw * 0.95 / c.kwh * 100;              // % заряду за 1 год світла
     var lvl = function (h) { return Math.min(100, 20 + perH * h); };
+    var gain = function (h) { return (lvl(h) - 20) / 100 * c.kwh; }; // кВт·год, які можна використати
     var hs = [];
     if (S.on <= 6) { for (var i = 1; i <= S.on; i++) hs.push(i); }
     else hs = [1, 2, 3, 4, 6, S.on].filter(function (h, i, arr) { return h <= S.on && arr.indexOf(h) === i; });
-    var X = lvl(S.on);
-    var needPct = need.outKwh / c.kwh * 100;                 // скільки % забере наступне відключення
-    var avail = X - 20;
-    var ok = avail >= needPct * 0.98;
-    var res = ok
-      ? '✓ Вистачить на наступні ' + S.hours + ' год без світла' +
-        '<small>Споживання забере ≈ ' + Math.round(needPct) + '% заряду: батарея опуститься з ' + Math.round(X) + '% до ≈ ' + Math.round(Math.max(20, X - needPct)) + '% (20% — захисний мінімум).</small>'
-      : '✗ Не вистачить на всі ' + S.hours + ' год без світла — лише на ≈ ' + num(Math.max(0, avail / 100 * c.kwh * 0.9 * 1000 / need.avgW), 1) + ' год' +
-        '<small>Потрібно ≈ ' + Math.round(needPct) + '% заряду, а за ' + S.on + ' год світла батарея набере лише ' + Math.round(avail) + '% (з 20% до ' + Math.round(X) + '%).</small>';
-    return '<div class="chg"><div class="chg-t">Світло дали — батарея заряджається з 20% (≈ ' + num(c.chargeKw, 1) + ' кВт):</div>' +
+    var X = lvl(S.on), got = gain(S.on), want = need.outKwh;
+    var ok = got >= want * 0.98;
+    var kwh = function (v) { return num(v, v < 10 ? 1 : 0) + ' кВт·год'; };
+
+    var res;
+    if (ok) {
+      res = '<div class="chg-res ok">✓ Вистачить на ' + S.hours + ' год без світла' +
+        '<small>Після відключення залишиться ≈ ' + kwh(got - want) + ' понад захисні 20% (батарея опуститься з ' + Math.round(X) + '% до ≈ ' + Math.round(X - want / c.kwh * 100) + '%).</small></div>';
+    } else {
+      var lastH = got * 0.9 * 1000 / need.avgW;
+      var maxW = got * 0.9 * 1000 / S.hours;                 // яке споживання витягне цей заряд
+      var tips = [];
+      tips.push('зменшити споживання до ≈ <b>' + num(Math.floor(maxW / 10) * 10, 0) + ' Вт</b> за годину (зараз ' + num(need.avgW, 0) + ' Вт — на ' + num(Math.ceil((need.avgW - maxW) / 10) * 10, 0) + ' Вт менше)');
+      if (X >= 99.5) {
+        // батарея заряджається повністю, але її замало — потрібна більша
+        tips.push('або батарею від ≈ <b>' + num(Math.ceil(want / 0.8 * 2) / 2) + ' кВт·год</b> (ця — ' + num(c.kwh, 2) + ')');
+      } else {
+        // батарея не встигає зарядитися — потрібно довше світло
+        tips.push('або щоб світло було ≈ <b>' + num(Math.ceil(want / (c.chargeKw * 0.95) * 2) / 2) + ' год</b> (зараз ' + S.on + ')');
+      }
+      res = '<div class="chg-res bad">✗ Не вистачить: заряду вистачить на ≈ ' + num(lastH, 1) + ' год із ' + S.hours +
+        '<small>Щоб вистачило на всі ' + S.hours + ' год, треба:</small><ul class="chg-tips">' + tips.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>';
+    }
+
+    return '<div class="chg">' +
+      '<div class="chg-t">Світло дали — батарея ' + num(c.kwh, 2) + ' кВт·год заряджається з 20% (≈ ' + num(c.chargeKw, 1) + ' кВт на годину):</div>' +
       '<div class="chg-row">' + hs.map(function (h) {
-        return '<span' + (h === S.on ? ' class="cur"' : '') + '>' + h + ' год → <b>' + Math.round(lvl(h)) + '%</b></span>';
+        return '<span' + (h === S.on ? ' class="cur"' : '') + '>' + h + ' год → <b>' + Math.round(lvl(h)) + '%</b><i>+' + kwh(gain(h)) + '</i></span>';
       }).join('') + '</div>' +
-      '<div class="chg-res ' + (ok ? 'ok' : 'bad') + '">' + res + '</div></div>';
+      '<div class="chg-cmp">' +
+      '<div><span>Набере за ' + S.on + ' год світла</span><b>' + kwh(got) + '</b></div>' +
+      '<div class="' + (ok ? 'ok' : 'bad') + '"><span>Потрібно на ' + S.hours + ' год без світла</span><b>' + kwh(want) + '</b></div>' +
+      '</div>' + res + '</div>';
   }
 
   var LAST = { cands: {} };
