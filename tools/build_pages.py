@@ -115,9 +115,9 @@ PAGES['kontakty.html'] = ('Контакти та реквізити', 'Як з �
 <h2>Реквізити продавця</h2>
 <table class="req">
 <tr><td>Продавець</td><td><span data-cfgv="legal.name"></span></td></tr>
-<tr><td>РНОКПП / код ЄДРПОУ</td><td><span data-cfgv="legal.code"></span></td></tr>
-<tr><td>Юридична адреса</td><td><span data-cfgv="legal.address"></span></td></tr>
-<tr><td>IBAN</td><td><span data-cfgv="legal.iban"></span></td></tr>
+<tr><td>Код отримувача (РНОКПП)</td><td><span data-cfgv="legal.code"></span></td></tr>
+<tr data-row><td>Юридична адреса</td><td><span data-cfgv="legal.address" data-hide-empty></span></td></tr>
+<tr><td>Рахунок отримувача (IBAN)</td><td><span data-cfgv="legal.iban"></span></td></tr>
 <tr><td>Банк</td><td><span data-cfgv="legal.bank"></span></td></tr>
 <tr data-row><td>Податковий статус</td><td><span data-cfgv="legal.tax" data-hide-empty></span></td></tr>
 </table>
