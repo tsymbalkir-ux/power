@@ -25,7 +25,6 @@
         <a class="btn btn-amber" href="#pidbir">Підібрати систему за хвилину</a>
         <a class="btn btn-ghost" href="#catalog">Дивитися каталог</a>
       </div>
-      <div class="hero-facts" id="heroFacts"></div>
     </div>
     <div class="hero-art" aria-hidden="true">
       <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
@@ -51,39 +50,19 @@
     <div class="picker">
       <div class="panel">
         <div class="step">
-          <div class="step-t"><span class="n">1</span>Об'єкт<small>необов'язково</small></div>
-          <div class="seg" id="objSeg">
-            <button data-v="flat">Квартира</button>
-            <button data-v="house">Приватний будинок</button>
-            <button data-v="biz">Офіс / бізнес</button>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-t"><span class="n">2</span>Мережа на вводі<small>видно на лічильнику або щитку</small></div>
-          <div class="seg" id="phSeg">
-            <button data-v="1">1 фаза (220 В)</button>
-            <button data-v="3">3 фази (380 В)</button>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-t"><span class="n">3</span>Прилади, які мають працювати<small id="appsCount"></small></div>
-          <div class="preset-row" id="presetRow"></div>
-          <div class="apps" id="apps"></div>
-        </div>
-        <div class="step">
-          <div class="step-t"><span class="n">4</span>Графік відключень<small>щоб порахувати і роботу, і зарядку</small></div>
+          <div class="step-t"><span class="n">1</span>Графік: скільки світло є і скільки немає</div>
           <div class="seg sched" id="schedSeg">
             <button data-on="3" data-off="3">💡 3 год є · 3 немає</button>
             <button data-on="2" data-off="4">💡 2 год є · 4 немає</button>
             <button data-on="3" data-off="6">💡 3 год є · 6 немає</button>
           </div>
-          <div class="sub-l">Без світла</div>
+          <div class="sub-l">Світла немає</div>
           <div class="range-row">
-            <input type="range" class="range" id="hours" min="1" max="24" step="1" value="8" aria-label="Скільки годин без світла">
+            <input type="range" class="range" id="hours" min="1" max="24" step="1" value="8" aria-label="Скільки годин світла немає">
             <div class="range-val" id="hoursVal"></div>
           </div>
           <div class="ticks"><span>1 год</span><span>6</span><span>12</span><span>24 год</span></div>
-          <div class="sub-l">Світло є (час на зарядку)</div>
+          <div class="sub-l">Світло є (батарея заряджається)</div>
           <div class="range-row">
             <input type="range" class="range" id="onHours" min="1" max="12" step="1" value="4" aria-label="Скільки годин світло є">
             <div class="range-val" id="onVal"></div>
@@ -91,18 +70,45 @@
           <div class="ticks"><span>1 год</span><span>4</span><span>8</span><span>12 год</span></div>
         </div>
         <div class="step">
+          <div class="step-t"><span class="n">2</span>Об'єкт<small>необов'язково</small></div>
+          <div class="seg" id="objSeg">
+            <button data-v="flat">Квартира</button>
+            <button data-v="house">Приватний будинок</button>
+            <button data-v="biz">Офіс / бізнес</button>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-t"><span class="n">3</span>Мережа на вводі<small>видно на лічильнику або щитку</small></div>
+          <div class="seg" id="phSeg">
+            <button data-v="1">1 фаза (220 В)</button>
+            <button data-v="3">3 фази (380 В)</button>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-t"><span class="n">4</span>Споживання<small id="appsCount"></small></div>
+          <div class="seg" id="modeSeg">
+            <button data-mode="apps">Обрати прилади</button>
+            <button data-mode="own">Вписати своє споживання</button>
+          </div>
+          <div id="modeApps">
+            <div class="preset-row" id="presetRow"></div>
+            <div class="apps" id="apps"></div>
+          </div>
+          <div id="modeOwn" class="own">
+            <label class="own-f"><span>Середнє споживання за годину</span>
+              <span class="own-in"><input type="number" id="ownAvg" min="0" max="50000" step="10" inputmode="numeric" placeholder="напр. 600"><b>Вт</b></span>
+              <small>Скільки в середньому витрачає будинок за 1 годину. 600 Вт = 0,6 кВт·год за годину. Можна взяти з лічильника: добове споживання ÷ 24.</small></label>
+            <label class="own-f"><span>Максимум, що працює одночасно <em>необов'язково</em></span>
+              <span class="own-in"><input type="number" id="ownPeak" min="0" max="60000" step="100" inputmode="numeric" placeholder="напр. 3000"><b>Вт</b></span>
+              <small>Наприклад, котел + холодильник + чайник разом. Якщо не знаєте — порахуємо як 3× середнього, але не менше 2 кВт.</small></label>
+          </div>
+        </div>
+        <div class="step">
           <div class="step-t"><span class="n">5</span>Сонячні панелі</div>
           <div class="seg" id="solSeg">
             <button data-v="no">Не потрібні</button>
             <button data-v="later">Можливо, згодом</button>
             <button data-v="yes">Так, одразу</button>
-          </div>
-        </div>
-        <div class="step">
-          <div class="step-t"><span class="n">6</span>Бюджет до</div>
-          <div class="range-row">
-            <input type="range" class="range" id="budget" min="80000" max="350000" step="5000" value="350000">
-            <div class="range-val" id="budgetVal"></div>
           </div>
         </div>
       </div>

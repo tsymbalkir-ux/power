@@ -80,13 +80,7 @@
     }
   }, true);
 
-  /* ---------- hero facts ---------- */
   var kits = P.filter(function (p) { return p.cat === 'kit'; });
-  var brands = Array.from(new Set(P.map(function (p) { return p.brand; })));
-  $('#heroFacts').innerHTML =
-    '<div><b>' + P.length + '</b><span>товарів у наявності</span></div>' +
-    '<div><b>' + kits.length + '</b><span>готових комплектів</span></div>' +
-    '<div><b>від ' + fmt(Math.min.apply(null, kits.map(function (k) { return k.price; }))).replace(' ₴', '') + ' ₴</b><span>комплект «під ключ»</span></div>';
 
   /* =====================================================
      PICKER
@@ -121,9 +115,8 @@
     biz: { router: 1, light: 2, pc: 3, server: 1, fridge: 1, coffee: 1, cams: 1 }
   };
   // старт порожній: користувач сам обирає прилади, типовий набір — лише за кнопкою
-  var DEF = { obj: '', ph: '', sol: '', hours: 8, on: 4, budget: 350000, qty: {} };
-  var S = store.get('picker-v2') || JSON.parse(JSON.stringify(DEF));
-  if (!S.on) S.on = DEF.on;
+  var DEF = { obj: '', ph: '', sol: '', hours: 8, on: 4, mode: 'apps', ownAvg: '', ownPeak: '', qty: {} };
+  var S = store.get('picker-v3') || JSON.parse(JSON.stringify(DEF));
   var OBJN = { flat: 'квартири', house: 'будинку', biz: 'офісу' };
   function renderPresets() {
     var row = $('#presetRow');
@@ -169,8 +162,22 @@
     update();
   });
 
-  var hoursEl = $('#hours'), onEl = $('#onHours'), budgetEl = $('#budget');
-  hoursEl.value = S.hours; onEl.value = S.on; budgetEl.value = S.budget;
+  var hoursEl = $('#hours'), onEl = $('#onHours'), ownAvgEl = $('#ownAvg'), ownPeakEl = $('#ownPeak');
+  hoursEl.value = S.hours; onEl.value = S.on; ownAvgEl.value = S.ownAvg; ownPeakEl.value = S.ownPeak;
+  // режим споживання: прилади або власні цифри
+  function paintMode() {
+    $$('#modeSeg button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.mode === S.mode); });
+    $('#modeApps').style.display = S.mode === 'apps' ? '' : 'none';
+    $('#modeOwn').classList.toggle('on', S.mode === 'own');
+  }
+  $('#modeSeg').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    S.mode = b.dataset.mode; paintMode(); update();
+    if (S.mode === 'own') ownAvgEl.focus();
+  });
+  ownAvgEl.addEventListener('input', function () { S.ownAvg = ownAvgEl.value; update(); });
+  ownPeakEl.addEventListener('input', function () { S.ownPeak = ownPeakEl.value; update(); });
+  paintMode();
   hoursEl.addEventListener('input', function () { S.hours = +hoursEl.value; update(); });
   onEl.addEventListener('input', function () { S.on = +onEl.value; update(); });
   // плашки графіка: «світло X год є, Y год немає»
@@ -181,9 +188,8 @@
   function paintSched() {
     $$('#schedSeg button').forEach(function (b) { b.setAttribute('aria-pressed', +b.dataset.on === S.on && +b.dataset.off === S.hours); });
   }
-  budgetEl.addEventListener('input', function () { S.budget = +budgetEl.value; update(); });
   $('#resetPicker').addEventListener('click', function () {
-    S = JSON.parse(JSON.stringify(DEF)); hoursEl.value = S.hours; onEl.value = S.on; budgetEl.value = S.budget;
+    S = JSON.parse(JSON.stringify(DEF)); hoursEl.value = S.hours; onEl.value = S.on; ownAvgEl.value = ''; ownPeakEl.value = ''; paintMode();
     paintObj(); paintPh(); paintSol(); renderApps(); update();
   });
 
@@ -197,12 +203,20 @@
     });
     // не всі прилади працюють одночасно: понад 3 кВт рахуємо 60% (коефіцієнт одночасності)
     var simult = sumW <= 3000 ? sumW : 3000 + (sumW - 3000) * 0.6;
+    var own = S.mode === 'own';
+    if (own) {
+      // власні цифри: середнє за годину і (необов'язково) одночасний максимум
+      avgW = Math.max(0, +S.ownAvg || 0); count = avgW > 0 ? 1 : 0; heavy = [];
+      var pk = Math.max(0, +S.ownPeak || 0);
+      simult = pk > 0 ? Math.max(pk, avgW) : Math.max(avgW * 3, 2000);
+      surgeExtra = pk > 0 ? 0 : 0;
+    }
     var peak = simult + surgeExtra;
     var needKw = Math.max(simult * 1.2, peak / 2) / 1000; // гібридні інвертори тримають 2× номіналу кілька секунд
     var needKwh = avgW * S.hours / (0.8 * 0.9) / 1000;     // 80% глибина розряду, 90% ККД
     var outKwh = avgW * S.hours / 0.9 / 1000;               // скільки забирають з батареї за відключення
     var needChargeKw = outKwh / (S.on * 0.95);              // яка потужність зарядки потрібна, щоб відновити це, поки світло є
-    return { count: count, sumW: sumW, simult: simult, peak: peak, avgW: avgW, needKw: needKw, needKwh: needKwh, heavy: heavy, outKwh: outKwh, needChargeKw: needChargeKw };
+    return { own: own, peakGuess: own && !(+S.ownPeak > 0), count: count, sumW: sumW, simult: simult, peak: peak, avgW: avgW, needKw: needKw, needKwh: needKwh, heavy: heavy, outKwh: outKwh, needChargeKw: needChargeKw };
   }
 
   /* ---------- зарядка від мережі ----------
@@ -254,13 +268,13 @@
     c.okKw = c.kw >= need.needKw;
     c.okKwh = c.kwh >= need.needKwh * 0.95;
     c.phaseOk = S.ph === '3' ? true : c.phases === 1; // фаза не обрана — рахуємо як 1 фазу
-    c.inBudget = S.budget >= 350000 || c.price <= S.budget;
+    c.inBudget = true;
     // зарядка: за S.on годин світла з 20% (захисний мінімум)
     c.chargeKw = chargeKw(c);
     var usable = c.kwh * 0.8, cin = Math.min(c.chargeKw * S.on * 0.95, usable);
     c.chargeTo = Math.min(100, 20 + cin / c.kwh * 100);
     c.fullH = usable / (c.chargeKw * 0.95);
-    c.okCharge = cin >= Math.min(need.outKwh, usable) * 0.98;
+    c.okCharge = cin >= need.outKwh * 0.98; // заряду за час зі світлом вистачає на наступне відключення
     return c;
   }
 
@@ -310,32 +324,51 @@
       '<h4>' + esc(c.kind === 'kit' ? short(c.main) : c.title) + '</h4>' +
       '<div class="parts">' + esc(partsTxt) + ' · ' + num(c.kw) + ' кВт / ' + num(c.kwh, 2) + ' кВт·год' + (notes.length ? ' · ' + notes.join(', ') : '') + '</div>' +
       '<div class="meters">' +
-      '<div class="meter"><span>Пропрацює <b>≈ ' + (hrs >= 99 ? '99+' : num(hrs, 0)) + ' год</b></span>' + bar(cov, cov < 0.95 ? (cov < 0.7 ? 'low' : 'mid') : '') + '</div>' +
+      '<div class="meter"><span>Від повної батареї <b>≈ ' + (hrs >= 99 ? '99+' : num(hrs, 0)) + ' год</b></span>' + bar(cov, cov < 0.95 ? (cov < 0.7 ? 'low' : 'mid') : '') + '</div>' +
       '<div class="meter"><span>Завантаження інвертора <b>' + Math.round(load * 100) + '%</b></span>' + bar(load, load > 0.85 ? 'mid' : '') + '</div>' +
-      '<div class="meter"><span>Зарядка за ' + S.on + ' год світла <b>20% → ' + Math.round(c.chargeTo) + '%</b></span>' + bar(c.chargeTo / 100, c.okCharge ? '' : (c.chargeTo < 60 ? 'low' : 'mid')) + '</div>' +
-      '</div>' +
-      '<div class="charge-note ' + (c.okCharge ? 'ok' : 'bad') + '">' + (c.okCharge
-        ? '✓ За ' + S.on + ' год світла встигає відновити заряд після ' + S.hours + ' год відключення'
-        : '⚠ За ' + S.on + ' год світла не встигає відновити заряд: заряд падатиме з кожним відключенням') +
-        ' · зарядка ≈ ' + num(c.chargeKw, 1) + ' кВт, з 20% до 100% ≈ ' + num(c.fullH, 1) + ' год</div>' +
+      '</div>' + chargeBlock(c, need) +
       '<div class="rec-foot"><span class="price">' + fmt(c.price) + '</span>' +
       '<button class="btn btn-ghost btn-sm" data-open="' + c.main.id + '">Деталі</button>' +
       '<button class="btn btn-dark btn-sm" data-order="' + esc(c.key) + '">Замовити</button></div>' +
       '</div></div>';
   }
 
+  /* Блок зарядки: на скільки зарядиться батарея за 1, 2, 3… год світла (з 20%)
+     і чи вистачить цього заряду на наступний період без світла. */
+  function chargeBlock(c, need) {
+    var perH = c.chargeKw * 0.95 / c.kwh * 100;              // % заряду за 1 год світла
+    var lvl = function (h) { return Math.min(100, 20 + perH * h); };
+    var hs = [];
+    if (S.on <= 6) { for (var i = 1; i <= S.on; i++) hs.push(i); }
+    else hs = [1, 2, 3, 4, 6, S.on].filter(function (h, i, arr) { return h <= S.on && arr.indexOf(h) === i; });
+    var X = lvl(S.on);
+    var needPct = need.outKwh / c.kwh * 100;                 // скільки % забере наступне відключення
+    var avail = X - 20;
+    var ok = avail >= needPct * 0.98;
+    var res = ok
+      ? '✓ Вистачить на наступні ' + S.hours + ' год без світла' +
+        '<small>Споживання забере ≈ ' + Math.round(needPct) + '% заряду: батарея опуститься з ' + Math.round(X) + '% до ≈ ' + Math.round(Math.max(20, X - needPct)) + '% (20% — захисний мінімум).</small>'
+      : '✗ Не вистачить на всі ' + S.hours + ' год без світла — лише на ≈ ' + num(Math.max(0, avail / 100 * c.kwh * 0.9 * 1000 / need.avgW), 1) + ' год' +
+        '<small>Потрібно ≈ ' + Math.round(needPct) + '% заряду, а за ' + S.on + ' год світла батарея набере лише ' + Math.round(avail) + '% (з 20% до ' + Math.round(X) + '%).</small>';
+    return '<div class="chg"><div class="chg-t">Світло дали — батарея заряджається з 20% (≈ ' + num(c.chargeKw, 1) + ' кВт):</div>' +
+      '<div class="chg-row">' + hs.map(function (h) {
+        return '<span' + (h === S.on ? ' class="cur"' : '') + '>' + h + ' год → <b>' + Math.round(lvl(h)) + '%</b></span>';
+      }).join('') + '</div>' +
+      '<div class="chg-res ' + (ok ? 'ok' : 'bad') + '">' + res + '</div></div>';
+  }
+
   var LAST = { cands: {} };
   function update() {
-    store.set('picker-v2', S); renderPresets();
+    store.set('picker-v3', S); renderPresets();
     $('#hoursVal').textContent = S.hours + ' год';
     $('#onVal').textContent = S.on + ' год';
     paintSched();
-    $('#budgetVal').textContent = S.budget >= 350000 ? 'без меж' : fmt(S.budget).replace(/\s₴$/, '') + ' ₴';
     var need = calcNeed();
-    $('#appsCount').textContent = need.count ? 'обрано: ' + need.count : '';
+    $('#appsCount').textContent = S.mode === 'apps' && need.count ? 'обрано: ' + need.count : '';
     var html = '';
     if (!need.count) {
-      $('#result').innerHTML = '<div class="empty"><b style="color:var(--ink);font-size:17px">Розрахунок з\'явиться тут</b><br>Відмітьте прилади, які мають працювати без світла, і оберіть, скільки годин тривають відключення. Підбір оновлюється одразу.</div>';
+      $('#result').innerHTML = '<div class="empty"><b style="color:var(--ink);font-size:17px">Розрахунок з\'явиться тут</b><br>' +
+        (S.mode === 'own' ? 'Впишіть середнє споживання за годину (крок 4).' : 'Відмітьте прилади, які мають працювати без світла (крок 4), або впишіть своє споживання.') + ' Підбір оновлюється одразу.</div>';
       $('#mbar').classList.remove('show');
       return;
     }
@@ -345,9 +378,10 @@
       '<div class="need-box"><span>Батарея від</span><b>' + num(Math.ceil(need.needKwh * 2) / 2) + ' <small>кВт·год</small></b></div>' +
       '<div class="need-box"><span>Зарядка від (за ' + S.on + ' год світла)</span><b>' + num(Math.ceil(need.needChargeKw * 10) / 10) + ' <small>кВт</small></b></div>' +
       '<div class="need-box"><span>Одночасне навантаження</span><b>' + num(need.simult / 1000, 1) + ' <small>кВт</small></b></div>' +
-      '</div><div class="need-note">Графік: ' + S.hours + ' год без світла, ' + S.on + ' год світло є. За відключення прилади витратять ≈ ' + num(need.avgW * S.hours / 1000, 1) + ' кВт·год (у середньому ' + num(need.avgW, 0) + ' Вт). Пусковий пік ≈ ' + num(need.peak / 1000, 1) + ' кВт.</div></div>';
+      '</div><div class="need-note">Графік: ' + S.hours + ' год без світла, ' + S.on + ' год світло є. За одне відключення ' + (need.own ? 'будинок витратить' : 'прилади витратять') + ' ≈ ' + num(need.avgW * S.hours / 1000, 1) + ' кВт·год (у середньому ' + num(need.avgW, 0) + ' Вт за годину). ' +
+      (need.peakGuess ? 'Одночасний максимум не вказано — взяли ' + num(need.simult / 1000, 1) + ' кВт.' : 'Пусковий пік ≈ ' + num(need.peak / 1000, 1) + ' кВт.') + '</div></div>';
 
-    if (!S.ph) html += '<div class="warn">ℹ️<span>Не обрано фазність мережі — рахуємо для 1 фази (220 В). Якщо у вас 3 фази, оберіть це в кроці 2.</span></div>';
+    if (!S.ph) html += '<div class="warn">ℹ️<span>Не обрано фазність мережі — рахуємо для 1 фази (220 В). Якщо у вас 3 фази, оберіть це в кроці 3.</span></div>';
     if (need.heavy.length) html += '<div class="warn">⚡<span><b>' + esc(need.heavy.join(', ')) + '</b> — потужні прилади. Вони різко скорочують час роботи від батареї; краще вмикати їх, коли є світло або сонце.</span></div>';
 
     if (need.needKw > 50 || need.needKwh > 42) {
@@ -361,7 +395,7 @@
 
     if (!r.res.length) {
       if (r.over) {
-        html += '<div class="warn">💸<span>У межах бюджету повної системи немає. Найближчий варіант — на ' + fmt(r.over.price - S.budget) + ' дорожче:</span></div>';
+        html += '<div class="warn">💸<span>У межах бюджету повної системи немає. Найближчий варіант — на ' + '' + 'дорожче:</span></div>';
         html += recCard({ c: r.over, tag: 'Поза бюджетом', best: true }, need);
       }
       if (r.partial) html += recCard({ c: r.partial, tag: 'У межах бюджету, менше годин' }, need);
@@ -474,7 +508,9 @@
   }
   function calcSummary() {
     var n = LAST.need || calcNeed();
-    var apps = Object.keys(S.qty).map(function (id) { return APPMAP[id].n + (S.qty[id] > 1 ? ' ×' + S.qty[id] : ''); }).join(', ');
+    var apps = S.mode === 'own'
+      ? 'власне споживання ' + (S.ownAvg || 0) + ' Вт за годину' + (+S.ownPeak > 0 ? ', одночасно до ' + S.ownPeak + ' Вт' : '')
+      : Object.keys(S.qty).map(function (id) { return APPMAP[id].n + (S.qty[id] > 1 ? ' ×' + S.qty[id] : ''); }).join(', ');
     return 'Підбір: ' + ({ flat: 'квартира', house: 'приватний будинок', biz: 'офіс / бізнес' }[S.obj] || 'об\'єкт не вказано') + ', ' + (S.ph || '1') + ' фаз(а), ' + S.hours + ' год без світла / ' + S.on + ' год світло є.\nПрилади: ' + apps +
       '.\nПотреба: інвертор від ' + num(n.needKw, 1) + ' кВт, батарея від ' + num(n.needKwh, 1) + ' кВт·год.';
   }
