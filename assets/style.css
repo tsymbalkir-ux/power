@@ -346,3 +346,9 @@ section{padding:80px 0}
 .chg-res.ok{color:var(--green)}
 .chg-res.bad{color:var(--red)}
 .chg-res small{display:block;font-weight:500;color:var(--ink-3);font-size:12.5px}
+
+.num-in{display:flex;align-items:center;gap:6px;border:1.5px solid var(--line);border-radius:12px;padding:4px 12px;background:#fff;cursor:text;flex:none}
+.num-in:focus-within{border-color:var(--ink-3)}
+.num-in input{width:44px;border:0;outline:0;background:transparent;font-family:var(--display);font-weight:600;font-size:22px;text-align:right;padding:2px 0;-moz-appearance:textfield}
+.num-in input::-webkit-outer-spin-button,.num-in input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.num-in span{font-weight:700;color:var(--ink-2)}

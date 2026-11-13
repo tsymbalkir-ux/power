@@ -179,7 +179,19 @@
   ownPeakEl.addEventListener('input', function () { S.ownPeak = ownPeakEl.value; update(); });
   paintMode();
   hoursEl.addEventListener('input', function () { S.hours = +hoursEl.value; update(); });
+  // цифри біля повзунків можна вписати вручну
+  var hoursNum = $('#hoursNum'), onNum = $('#onNum');
+  function numInput(el, key, rangeEl, min, max) {
+    el.addEventListener('input', function () {
+      var v = Math.round(+el.value);
+      if (!el.value || isNaN(v)) return;
+      S[key] = Math.max(min, Math.min(max, v)); rangeEl.value = S[key]; update();
+    });
+    el.addEventListener('blur', function () { el.value = S[key]; });
+  }
+  numInput(hoursNum, 'hours', hoursEl, 1, 24);
   onEl.addEventListener('input', function () { S.on = +onEl.value; update(); });
+  numInput(onNum, 'on', onEl, 1, 12);
   // плашки графіка: «світло X год є, Y год немає»
   $('#schedSeg').addEventListener('click', function (e) {
     var b = e.target.closest('button'); if (!b) return;
@@ -360,8 +372,8 @@
   var LAST = { cands: {} };
   function update() {
     store.set('picker-v3', S); renderPresets();
-    $('#hoursVal').textContent = S.hours + ' год';
-    $('#onVal').textContent = S.on + ' год';
+    if (document.activeElement !== hoursNum) hoursNum.value = S.hours;
+    if (document.activeElement !== onNum) onNum.value = S.on;
     paintSched();
     var need = calcNeed();
     $('#appsCount').textContent = S.mode === 'apps' && need.count ? 'обрано: ' + need.count : '';
