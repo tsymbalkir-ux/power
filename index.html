@@ -10,25 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css">
 </head>
-<body>
+<body data-page="home">
 
-<header class="top">
-  <div class="wrap">
-    <a class="logo" href="#top" data-brand-logo>
-      <span class="logo-mark"><svg viewBox="0 0 24 24" fill="#ffbf1f"><path d="M13.5 2 4 14h6.5L9.5 22 20 9.5h-6.6L13.5 2z"/></svg></span>
-      <span data-cfg="brand">Резерв220</span>
-    </a>
-    <nav class="nav" id="nav">
-      <a href="#pidbir">Підбір</a>
-      <a href="#catalog">Каталог</a>
-      <a href="#how">Як це працює</a>
-      <a href="#faq">Питання</a>
-      <a href="#contacts">Контакти</a>
-    </nav>
-    <a class="phone" data-cfg-tel></a>
-    <button class="burger" aria-label="Меню" id="burger"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
-  </div>
-</header>
+<header id="siteHeader"></header>
 
 <main id="top">
 <section class="hero">
@@ -67,7 +51,7 @@
     <div class="picker">
       <div class="panel">
         <div class="step">
-          <div class="step-t"><span class="n">1</span>Об'єкт</div>
+          <div class="step-t"><span class="n">1</span>Об'єкт<small>необов'язково</small></div>
           <div class="seg" id="objSeg">
             <button data-v="flat">Квартира</button>
             <button data-v="house">Приватний будинок</button>
@@ -83,6 +67,7 @@
         </div>
         <div class="step">
           <div class="step-t"><span class="n">3</span>Прилади, які мають працювати<small id="appsCount"></small></div>
+          <div class="preset-row" id="presetRow"></div>
           <div class="apps" id="apps"></div>
         </div>
         <div class="step">
@@ -175,7 +160,7 @@
 </section>
 </main>
 
-<footer><div class="wrap"><span>© <span id="yr"></span> <span data-cfg="brand"></span>. Ціни вказано в гривнях.</span><a href="#top">Нагору ↑</a></div></footer>
+<footer id="siteFooter"></footer>
 
 <div class="modal" id="pModal" role="dialog" aria-modal="true"><div class="sheet" id="pSheet"></div></div>
 <div class="modal" id="oModal" role="dialog" aria-modal="true"><div class="sheet sm" id="oSheet"></div></div>
@@ -183,6 +168,7 @@
 <div class="mbar" id="mbar"><div id="mbarT"></div><a class="btn btn-amber btn-sm" href="#result">Варіанти</a></div>
 
 <script src="assets/config.js"></script>
+<script src="assets/layout.js"></script>
 <script src="assets/products.js"></script>
 <script src="assets/app.js"></script>
 </body>

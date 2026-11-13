@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Контакти та реквізити</title>
+<meta name="description" content="Як з нами зв'язатися, а також офіційні дані продавця.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="kontakty">
+<header id="siteHeader"></header>
+<main>
+<section class="doc-hero"><div class="wrap">
+<div class="crumbs"><a href="./">Головна</a> / Контакти та реквізити</div>
+<h1>Контакти та реквізити</h1>
+<p>Як з нами зв'язатися, а також офіційні дані продавця.</p>
+</div></section>
+<section class="doc"><div class="wrap">
+<nav class="doc-side"><a href="oplata-dostavka.html">Оплата і доставка</a><a href="povernennya.html">Повернення та обмін</a><a href="garantiya.html">Гарантія</a><a href="kontakty.html" aria-current="page">Контакти та реквізити</a><a href="oferta.html">Публічна оферта</a><a href="privacy.html">Конфіденційність</a></nav>
+<article class="doc-body">
+<h2>Контакти</h2>
+<table class="req">
+<tr><td>Телефон</td><td><span data-cfgv="phone"></span></td></tr>
+<tr data-row><td>Email</td><td><span data-cfgv="email" data-hide-empty></span></td></tr>
+<tr data-row><td>Telegram</td><td>@<span data-cfgv="telegram" data-hide-empty></span></td></tr>
+<tr data-row><td>Viber</td><td><span data-cfgv="viber" data-hide-empty></span></td></tr>
+<tr><td>Місто</td><td><span data-cfgv="city"></span></td></tr>
+<tr data-row><td>Адреса складу / самовивозу</td><td><span data-cfgv="address" data-hide-empty></span></td></tr>
+<tr><td>Графік роботи</td><td><span data-cfgv="hours"></span></td></tr>
+</table>
+
+<h2>Реквізити продавця</h2>
+<table class="req">
+<tr><td>Продавець</td><td><span data-cfgv="legal.name"></span></td></tr>
+<tr><td>Код отримувача (РНОКПП)</td><td><span data-cfgv="legal.code"></span></td></tr>
+<tr data-row><td>Юридична адреса</td><td><span data-cfgv="legal.address" data-hide-empty></span></td></tr>
+<tr><td>Рахунок отримувача (IBAN)</td><td><span data-cfgv="legal.iban"></span></td></tr>
+<tr><td>Банк</td><td><span data-cfgv="legal.bank"></span></td></tr>
+<tr data-row><td>Податковий статус</td><td><span data-cfgv="legal.tax" data-hide-empty></span></td></tr>
+</table>
+<p>Рахунок-фактуру для оплати на юридичну або фізичну особу надсилаємо після підтвердження замовлення.</p>
+
+<p class="updated">Оновлено: 13.11.2026</p>
+</article>
+</div></section>
+</main>
+<footer id="siteFooter"></footer>
+<script src="assets/config.js"></script>
+<script src="assets/layout.js"></script>
+<script>document.title = document.title + ' — ' + (window.SITE_CONFIG || {}).brand;</script>
+</body>
+</html>
