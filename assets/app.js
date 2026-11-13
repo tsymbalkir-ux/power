@@ -253,6 +253,20 @@
     return Math.min(INV_CHARGE_A[inv.id] || 100, batA) * b.volt / 1000;
   }
 
+  // Готові комплекти, що складаються з тих самих товарів каталогу: пари «інвертор + батарея»,
+  // які їх повторюють, у підборі не показуємо — лишаємо тільки комплект.
+  var KIT_SAME_AS = {
+    'PE-PKG-HOME': 'PE-INV-ANERN-4200+1xPE-TYT-8',
+    'PE-PKG-DEYE6-TYT16': 'PE-INV-DEYE-6K-SG05+1xPE-TYT-16',
+    'PE-PKG-DEYE8-TYT16': 'PE-INV-DEYE-8K+1xPE-TYT-16',
+    'PE-KIT-DEYE6-SEF16': 'PE-INV-DEYE-6K-SG05+1xPE-DEYE-SEF16C',
+    'PE-KIT-DEYE6SG06-SEF5': 'PE-INV-DEYE-6K+1xPE-DEYE-SEF5PRO',
+    'PE-KIT-DEYE66OG-SEF5': 'PE-INV-DEYE-6.6K-OG+1xPE-DEYE-SEF5PRO',
+    'PE-KIT-DEYE6SG06-SEF16': 'PE-INV-DEYE-6K+1xPE-DEYE-SEF16C'
+  };
+  var DUP_BUILDS = {};
+  Object.keys(KIT_SAME_AS).forEach(function (k) { DUP_BUILDS[KIT_SAME_AS[k]] = k; });
+
   // усі можливі конфігурації: готові комплекти + інвертор із батареями
   var INV = P.filter(function (p) { return p.cat === 'inverter'; });
   var BAT = P.filter(function (p) { return p.cat === 'battery' || p.cat === 'hv'; });
@@ -264,6 +278,7 @@
     INV.forEach(function (inv) {
       BAT.filter(function (b) { return b.bus === inv.bus; }).forEach(function (b) {
         var n = b.cat === 'hv' ? 1 : Math.max(1, Math.min(4, Math.ceil(need.needKwh / b.kwh - 0.05)));
+        if (DUP_BUILDS[inv.id + '+' + n + 'x' + b.id]) return; // такий готовий комплект уже є
         out.push({
           key: inv.id + '+' + n + 'x' + b.id, kind: 'build', main: inv,
           title: short(inv) + ' + ' + (n > 1 ? n + ' × ' : '') + short(b),
