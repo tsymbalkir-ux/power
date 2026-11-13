@@ -19,11 +19,6 @@
   $$('[data-cfg="brand"]').forEach(function (el) { el.textContent = CFG.brand || ''; });
   document.title = (CFG.brand || '') + ' — підбір системи резервного живлення';
   var telHref = CFG.phone ? 'tel:' + CFG.phone.replace(/[^\d+]/g, '') : '';
-  var topTel = $('[data-cfg-tel]');
-  if (CFG.phone) { topTel.href = telHref; topTel.textContent = CFG.phone; } else topTel.remove();
-  $('#yr').textContent = new Date().getFullYear();
-  $('#burger').addEventListener('click', function () { $('#nav').classList.toggle('open'); });
-  $$('#nav a').forEach(function (a) { a.addEventListener('click', function () { $('#nav').classList.remove('open'); }); });
 
   function contactLinks() {
     var out = [];
@@ -125,8 +120,16 @@
     house: { fridge: 1, gasboiler: 1, router: 1, light: 2, tv: 1, laptop: 1, pump: 1, cams: 1 },
     biz: { router: 1, light: 2, pc: 3, server: 1, fridge: 1, coffee: 1, cams: 1 }
   };
-  var DEF = { obj: 'house', ph: '1', sol: 'later', hours: 8, budget: 350000, qty: PRESETS.house };
-  var S = store.get('picker-v1') || JSON.parse(JSON.stringify(DEF));
+  // старт порожній: користувач сам обирає прилади, типовий набір — лише за кнопкою
+  var DEF = { obj: '', ph: '', sol: '', hours: 8, budget: 350000, qty: {} };
+  var S = store.get('picker-v2') || JSON.parse(JSON.stringify(DEF));
+  var OBJN = { flat: 'квартири', house: 'будинку', biz: 'офісу' };
+  function renderPresets() {
+    var row = $('#presetRow');
+    if (!S.obj) { row.innerHTML = '<span class="muted">Натискайте на прилади або «+», щоб додати. Можна обрати об\'єкт вище — запропонуємо типовий набір.</span>'; return; }
+    row.innerHTML = '<button type="button" class="link-btn" data-preset="' + S.obj + '">Додати типовий набір для ' + OBJN[S.obj] + '</button>' +
+      (Object.keys(S.qty).length ? '<button type="button" class="link-btn" data-preset="">Очистити прилади</button>' : '');
+  }
 
   function seg(id, key, onSet) {
     var el = $(id);
@@ -137,7 +140,12 @@
     });
     paint(); return paint;
   }
-  var paintObj = seg('#objSeg', 'obj', function (v) { S.qty = JSON.parse(JSON.stringify(PRESETS[v])); renderApps(); });
+  var paintObj = seg('#objSeg', 'obj', function () { renderPresets(); });
+  $('#presetRow').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-preset]'); if (!b) return;
+    S.qty = b.dataset.preset ? JSON.parse(JSON.stringify(PRESETS[b.dataset.preset])) : {};
+    renderApps(); update();
+  });
   var paintPh = seg('#phSeg', 'ph');
   var paintSol = seg('#solSeg', 'sol');
 
@@ -211,7 +219,7 @@
     c.load = need.simult / (c.kw * 1000);
     c.okKw = c.kw >= need.needKw;
     c.okKwh = c.kwh >= need.needKwh * 0.95;
-    c.phaseOk = S.ph === '3' ? true : c.phases === 1;
+    c.phaseOk = S.ph === '3' ? true : c.phases === 1; // фаза не обрана — рахуємо як 1 фазу
     c.inBudget = S.budget >= 350000 || c.price <= S.budget;
     return c;
   }
@@ -271,14 +279,15 @@
 
   var LAST = { cands: {} };
   function update() {
-    store.set('picker-v1', S);
+    store.set('picker-v2', S); renderPresets();
     $('#hoursVal').textContent = S.hours + ' год';
     $('#budgetVal').textContent = S.budget >= 350000 ? 'без меж' : fmt(S.budget).replace(/\s₴$/, '') + ' ₴';
     var need = calcNeed();
     $('#appsCount').textContent = need.count ? 'обрано: ' + need.count : '';
     var html = '';
     if (!need.count) {
-      $('#result').innerHTML = '<div class="empty">Оберіть хоча б один прилад — і тут з\'явиться розрахунок та підібрані системи.</div>';
+      $('#result').innerHTML = '<div class="empty"><b style="color:var(--ink);font-size:17px">Розрахунок з\'явиться тут</b><br>Відмітьте прилади, які мають працювати без світла, і оберіть, скільки годин тривають відключення. Підбір оновлюється одразу.</div>';
+      $('#mbar').classList.remove('show');
       return;
     }
     html += '<div class="need"><div class="eyebrow" style="color:var(--amber)">Ваша потреба</div>' +
@@ -289,6 +298,7 @@
       '<div class="need-box"><span>Середнє споживання</span><b>' + num(need.avgW, 0) + ' <small>Вт</small></b></div>' +
       '</div><div class="need-note">За ' + S.hours + ' год прилади витратять ≈ ' + num(need.avgW * S.hours / 1000, 1) + ' кВт·год. Пусковий пік ≈ ' + num(need.peak / 1000, 1) + ' кВт.</div></div>';
 
+    if (!S.ph) html += '<div class="warn">ℹ️<span>Не обрано фазність мережі — рахуємо для 1 фази (220 В). Якщо у вас 3 фази, оберіть це в кроці 2.</span></div>';
     if (need.heavy.length) html += '<div class="warn">⚡<span><b>' + esc(need.heavy.join(', ')) + '</b> — потужні прилади. Вони різко скорочують час роботи від батареї; краще вмикати їх, коли є світло або сонце.</span></div>';
 
     if (need.needKw > 50 || need.needKwh > 42) {
@@ -416,7 +426,7 @@
   function calcSummary() {
     var n = LAST.need || calcNeed();
     var apps = Object.keys(S.qty).map(function (id) { return APPMAP[id].n + (S.qty[id] > 1 ? ' ×' + S.qty[id] : ''); }).join(', ');
-    return 'Підбір: ' + { flat: 'квартира', house: 'приватний будинок', biz: 'офіс / бізнес' }[S.obj] + ', ' + S.ph + ' фаз(а), ' + S.hours + ' год без світла.\nПрилади: ' + apps +
+    return 'Підбір: ' + ({ flat: 'квартира', house: 'приватний будинок', biz: 'офіс / бізнес' }[S.obj] || 'об\'єкт не вказано') + ', ' + (S.ph || '1') + ' фаз(а), ' + S.hours + ' год без світла.\nПрилади: ' + apps +
       '.\nПотреба: інвертор від ' + num(n.needKw, 1) + ' кВт, батарея від ' + num(n.needKwh, 1) + ' кВт·год.';
   }
   function openOrder(key) {
