@@ -22,6 +22,21 @@
 
 Шапка й підвал спільні (`assets/layout.js`). Тексти інформаційних сторінок — у `tools/build_pages.py`; після зміни виконайте `python3 tools/build_pages.py`. Юридичні тексти — типовий шаблон, бажано показати юристу.
 
+## Аналітика та реклама
+
+Ідентифікатори — у `assets/config.js` → `analytics` (порожнє значення = сервіс вимкнено). Код — `assets/analytics.js`, підключений у `<head>` усіх сторінок.
+
+| Поле | Де взяти |
+|---|---|
+| `ga4` | Google Analytics → Адміністратор → Потоки даних → Ідентифікатор `G-…` |
+| `googleAds` | Google Ads → Цілі → Конверсії → тег Google → `AW-…` |
+| `adsLeadLabel`, `adsCallLabel` | Google Ads → конверсія → «Налаштувати тег» → у `send_to: 'AW-…/МІТКА'` частина після `/` |
+| `clarity` | clarity.microsoft.com → Settings → Overview → Project ID |
+
+Події GA4 / Clarity: `view_item` (відкрито товар), `begin_checkout` (натиснуто «Замовити»), `generate_lead` (сформовано заявку, конверсія Ads «Заявка»), `contact_click` (телефон / Telegram / Viber / email, конверсія Ads «Дзвінок»), `search`, `calc_start`, `calc_result`. У GA4 позначте `generate_lead` і `contact_click` як ключові події.
+
+UTM-мітки та gclid запам'ятовуються в браузері й дописуються до тексту заявки рядком «Джерело: …» — менеджер бачить, звідки клієнт.
+
 ## Оновлення цін і товарів
 
 1. Вивантажте товари з Prom у .xlsx.

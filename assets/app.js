@@ -10,6 +10,8 @@
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var fmt = function (n) { return Math.round(n).toLocaleString('uk-UA').replace(/,/g, ' ') + ' ' + (CFG.currency || '₴'); };
   var num = function (n, d) { return (+n).toLocaleString('uk-UA', { maximumFractionDigits: d == null ? 1 : d }); };
+  var noop = function () {};
+  var SA = window.SiteAnalytics || { track: noop, viewItem: noop, beginCheckout: noop, lead: noop, attribution: function () { return ''; } };
   var store = {
     get: function (k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } },
     set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -503,7 +505,11 @@
   }
   $('#tabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; C.tab = b.dataset.v; renderTabs(); renderGrid(); });
   $('#brands').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; C.brand = b.dataset.b; renderTabs(); renderGrid(); });
-  $('#q').addEventListener('input', function (e) { C.q = e.target.value; renderGrid(); });
+  var qT;
+  $('#q').addEventListener('input', function (e) {
+    C.q = e.target.value; renderGrid();
+    clearTimeout(qT); qT = setTimeout(function () { if (C.q.trim().length > 1) SA.track('search', { search_term: C.q.trim() }); }, 1200);
+  });
   $('#sort').addEventListener('change', function (e) { C.sort = e.target.value; renderGrid(); });
 
   /* =====================================================
@@ -543,6 +549,7 @@
     });
     openModal('#pModal');
     $('#pModal').scrollTop = 0;
+    SA.viewItem(p);
     try { history.replaceState(null, '', '#p-' + p.slug); } catch (e) {}
   }
 
@@ -575,6 +582,8 @@
       '<label for="oNote">Коментар</label><textarea id="oNote" rows="3" placeholder="Місто, потрібен монтаж, питання…"></textarea>' +
       '<div class="send"><button class="btn btn-dark btn-block" type="submit">Підготувати заявку</button></div><div id="oOut"></div></form>';
     openModal('#oModal');
+    var kind = byId[key] ? 'product' : key === '__calc' ? 'calc_request' : 'picker_option';
+    SA.beginCheckout(o.items, o.total, kind);
     $('#oForm').addEventListener('submit', function (e) {
       e.preventDefault();
       var name = $('#oName').value.trim(), phone = $('#oPhone').value.trim(), note = $('#oNote').value.trim();
@@ -583,7 +592,9 @@
       var text = 'Заявка з сайту ' + (CFG.brand || '') + '\n\n' +
         (o.items.length ? o.items.map(function (x) { return '• ' + (x[1] > 1 ? x[1] + ' × ' : '') + x[0].name + ' — ' + fmt(x[0].price * x[1]); }).join('\n') + '\nРазом: ' + fmt(o.total) + ' (без ПДВ)' + '\n\n' : '') +
         (o.calc ? calcSummary() + '\n\n' : '') +
-        'Ім\'я: ' + (name || '—') + '\nТелефон: ' + phone + (note ? '\nКоментар: ' + note : '');
+        'Ім\'я: ' + (name || '—') + '\nТелефон: ' + phone + (note ? '\nКоментар: ' + note : '') +
+        (SA.attribution() ? '\nДжерело: ' + SA.attribution() : '');
+      SA.lead(o.items, o.total, kind, { phone: phone });
       var links = [];
       if (CFG.telegram) links.push('<a class="btn btn-amber btn-block" href="https://t.me/' + esc(CFG.telegram) + '" target="_blank" rel="noopener" data-copy>Відкрити Telegram @' + esc(CFG.telegram) + '</a>');
       if (CFG.viber) links.push('<a class="btn btn-ghost btn-block" href="viber://forward?text=' + encodeURIComponent(text) + '">Надіслати у Viber</a>');
@@ -632,6 +643,19 @@
       $('#mbar').classList.toggle('show', vis.form && !vis.res && calcNeed().count > 0);
     }, { threshold: 0 });
     io.observe($('#pidbir .panel')); io.observe($('#result'));
+  }
+  // аналітика підбору: перша взаємодія та перегляд результатів
+  var calcStarted = false, calcSeen = false;
+  $('#pidbir .panel').addEventListener('click', function () {
+    if (calcStarted) return; calcStarted = true; SA.track('calc_start');
+  });
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) {
+      if (calcSeen || !calcStarted || !es[0].isIntersecting) return;
+      calcSeen = true;
+      var n = calcNeed();
+      SA.track('calc_result', { need_kw: +(n.needKw || 0).toFixed(1), need_kwh: +(n.needKwh || 0).toFixed(1), hours_off: S.hours, phases: S.ph || '1' });
+    }, { threshold: 0.3 }).observe($('#result'));
   }
   renderApps(); update(); renderTabs(); renderGrid(); fromHash();
   // для перевірки логіки підбору з консолі
