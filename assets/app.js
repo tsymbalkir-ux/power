@@ -470,6 +470,12 @@
      CATALOG
      ===================================================== */
   var C = { tab: 'all', brand: '', q: '', sort: 'pop' };
+  // посадкові посилання для реклами: ?cat=inverter&brand=Deye#catalog — відкриває каталог з фільтром
+  try {
+    var up = new URLSearchParams(location.search);
+    if (CAT[up.get('cat')]) C.tab = up.get('cat');
+    if (up.get('brand')) C.brand = up.get('brand');
+  } catch (e) {}
   var ORDER = ['kit', 'inverter', 'battery', 'hv'];
   function renderTabs() {
     var cnt = function (k) { return P.filter(function (p) { return k === 'all' || p.cat === k; }).length; };
