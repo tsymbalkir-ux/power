@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://moesvitlo.com.ua/sitemap.xml

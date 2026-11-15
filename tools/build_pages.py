@@ -4,8 +4,8 @@
 import os
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UPDATED = '13.11.2026'
-VER = '20261113-5'  # змінюйте при кожному оновленні, щоб браузери не брали старі файли з кешу
+UPDATED = '14.11.2026'
+VER = '20261114-1'  # змінюйте при кожному оновленні, щоб браузери не брали старі файли з кешу
 
 NAV = [
     ('oplata-dostavka.html', 'Оплата і доставка'),
@@ -167,15 +167,21 @@ PAGES['privacy.html'] = ('Політика конфіденційності', '�
 <ul>
 <li>щоб обробити замовлення, погодити оплату та доставку;</li>
 <li>щоб надати консультацію, гарантійне та післяпродажне обслуговування;</li>
-<li>щоб виконати вимоги законодавства, зокрема щодо бухгалтерського обліку.</li>
+<li>щоб виконати вимоги законодавства, зокрема щодо бухгалтерського обліку;</li>
+<li>щоб вимірювати ефективність сайту й реклами та покращувати їх.</li>
 </ul>
 
 <h2>Кому передаються дані</h2>
-<p>Лише в обсязі, потрібному для виконання замовлення: службам доставки, банкам і платіжним сервісам. Ми не продаємо й не передаємо ваші дані третім особам для реклами.</p>
+<p>Лише в обсязі, потрібному для виконання замовлення: службам доставки, банкам і платіжним сервісам. Ми не продаємо ваші дані третім особам.</p>
 
 <h2>Дані у вашому браузері</h2>
 <p>Сайт зберігає у вашому браузері (localStorage) вибір у формі підбору та введені ім'я й телефон, щоб їх не довелося вводити повторно. Ці дані не надсилаються нам автоматично. Ви можете видалити їх, очистивши дані сайту в налаштуваннях браузера.</p>
 <p>Сайт розміщено на GitHub Pages і використовує шрифти Google Fonts. Ці сервіси можуть технічно обробляти IP-адресу відвідувача відповідно до власних політик.</p>
+
+<h2>Аналітика, реклама та файли cookie</h2>
+<p>Для статистики відвідувань і оцінки реклами сайт використовує Google Analytics 4, тег Google Ads і Microsoft Clarity. Ці сервіси встановлюють файли cookie та збирають знеособлені дані: які сторінки й товари ви переглядали, з якого джерела прийшли (зокрема з реклами), тип пристрою й браузера, приблизне місцезнаходження за IP-адресою, а Clarity — також рухи миші, кліки й прокручування сторінки (без вмісту полів введення).</p>
+<p>Коли ви формуєте заявку, номер телефону може бути переданий Google у захешованому (незворотно зашифрованому) вигляді, щоб зіставити заявку з рекламним переходом (розширені конверсії). Сам номер Google не бачить.</p>
+<p>Обробка відбувається відповідно до політик <a href="https://policies.google.com/privacy?hl=uk" target="_blank" rel="noopener">Google</a> та <a href="https://privacy.microsoft.com/uk-ua/privacystatement" target="_blank" rel="noopener">Microsoft</a>. Ви можете заблокувати cookie в налаштуваннях браузера або встановити <a href="https://tools.google.com/dlpage/gaoptout?hl=uk" target="_blank" rel="noopener">доповнення для відмови від Google Analytics</a> — сайт працюватиме як і раніше.</p>
 
 <h2>Ваші права</h2>
 <p>Відповідно до Закону України «Про захист персональних даних» ви можете дізнатися, які дані про вас ми маємо, вимагати їх виправлення або видалення, а також відкликати згоду на обробку. Для цього напишіть або зателефонуйте нам — контакти на сторінці <a href="kontakty.html">«Контакти та реквізити»</a>.</p>
@@ -195,6 +201,9 @@ TPL = '''<!DOCTYPE html>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/style.css?v={ver}">
+<link rel="canonical" href="https://moesvitlo.com.ua/{fn}">
+<script src="assets/config.js?v={ver}"></script>
+<script src="assets/analytics.js?v={ver}"></script>
 </head>
 <body data-page="{slug}">
 <header id="siteHeader"></header>
@@ -212,7 +221,6 @@ TPL = '''<!DOCTYPE html>
 </div></section>
 </main>
 <footer id="siteFooter"></footer>
-<script src="assets/config.js?v={ver}"></script>
 <script src="assets/layout.js?v={ver}"></script>
 <script>document.title = document.title + ' — ' + (window.SITE_CONFIG || {{}}).brand;</script>
 </body>
@@ -221,7 +229,7 @@ TPL = '''<!DOCTYPE html>
 
 for fn, (title, lead, body) in PAGES.items():
     side = ''.join('<a href="%s"%s>%s</a>' % (f, ' aria-current="page"' if f == fn else '', t) for f, t in NAV)
-    html = TPL.format(ver=VER, title=title, lead=lead, body=body, side=side, slug=fn[:-5], updated=UPDATED)
+    html = TPL.format(ver=VER, title=title, lead=lead, body=body, side=side, slug=fn[:-5], updated=UPDATED, fn=fn)
     with open(os.path.join(ROOT, fn), 'w', encoding='utf-8') as f:
         f.write(html)
     print('ok', fn)
